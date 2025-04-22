@@ -1,0 +1,11 @@
+darts 
+pandas 
+matplotlib 
+jupyter
+datascience
+numpy
+seaborn
+scikit-learn
+joblib
+PyQt5
+DataProcessor

@@ -1,0 +1,52 @@
+[
+  {
+      "Device Type": "Ceiling Fan",
+      "Power Consumption (W)": 75.40,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 26.70,
+      "Humidity (%)": 70.20,
+      "Usage Duration (minutes)": 300,
+      "Energy Cost ($)": 15.80,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "TV",
+      "Power Consumption (W)": 120.60,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 22.90,
+      "Humidity (%)": 45.60,
+      "Usage Duration (minutes)": 180,
+      "Energy Cost ($)": 25.40,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Smart Bulb",
+      "Power Consumption (W)": 10.80,
+      "Room Location": "Office",
+      "Temperature (°C)": 20.50,
+      "Humidity (%)": 55.80,
+      "Usage Duration (minutes)": 60,
+      "Energy Cost ($)": 1.50,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Washing Machine",
+      "Power Consumption (W)": 650.90,
+      "Room Location": "Garage",
+      "Temperature (°C)": 24.30,
+      "Humidity (%)": 52.40,
+      "Usage Duration (minutes)": 90,
+      "Energy Cost ($)": 120.70,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Laptop Charger",
+      "Power Consumption (W)": 28.90,
+      "Room Location": "Bathroom",
+      "Temperature (°C)": 23.60,
+      "Humidity (%)": 68.30,
+      "Usage Duration (minutes)": 150,
+      "Energy Cost ($)": 7.90,
+      "On/Off Status": "On"
+  }
+]

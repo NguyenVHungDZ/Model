@@ -1,0 +1,52 @@
+[
+  {
+      "Device Type": "Heater",
+      "Power Consumption (W)": 1800.50,
+      "Room Location": "Kitchen",
+      "Temperature (°C)": 18.20,
+      "Humidity (%)": 65.40,
+      "Usage Duration (minutes)": 30,
+      "Energy Cost ($)": 90.00,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Air Conditioner",
+      "Power Consumption (W)": 1500.30,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 24.50,
+      "Humidity (%)": 55.20,
+      "Usage Duration (minutes)": 120,
+      "Energy Cost ($)": 200.10,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Smart Plug",
+      "Power Consumption (W)": 5.50,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 22.30,
+      "Humidity (%)": 48.90,
+      "Usage Duration (minutes)": 90,
+      "Energy Cost ($)": 2.20,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Microwave",
+      "Power Consumption (W)": 1000.25,
+      "Room Location": "Kitchen",
+      "Temperature (°C)": 19.80,
+      "Humidity (%)": 60.10,
+      "Usage Duration (minutes)": 45,
+      "Energy Cost ($)": 60.50,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Refrigerator",
+      "Power Consumption (W)": 200.80,
+      "Room Location": "Garage",
+      "Temperature (°C)": 23.10,
+      "Humidity (%)": 50.00,
+      "Usage Duration (minutes)": 1440,
+      "Energy Cost ($)": 80.30,
+      "On/Off Status": "On"
+  }
+]
