@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 # Load model and encoders
-model = joblib.load("testModel.pkl")
+model = joblib.load("gb_model.pkl")
 device_encoder = joblib.load("device_encoder.pkl")
 room_encoder = joblib.load("room_encoder.pkl")
 scaler = joblib.load("scaler.pkl")

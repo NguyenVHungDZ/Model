@@ -1,0 +1,38 @@
+[
+  {
+      "Device Type": "Heater",
+      "Power Consumption (W)": 1900.00,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 10.50,
+      "Humidity (%)": 55.00,
+      "Usage Duration (minutes)": 120,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Smart Bulb",
+      "Power Consumption (W)": 9.00,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 12.30,
+      "Humidity (%)": 58.20,
+      "Usage Duration (minutes)": 60,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "TV",
+      "Power Consumption (W)": 115.00,
+      "Room Location": "Office",
+      "Temperature (°C)": 11.80,
+      "Humidity (%)": 56.90,
+      "Usage Duration (minutes)": 180,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Ceiling Fan",
+      "Power Consumption (W)": 60.00,
+      "Room Location": "Kitchen",
+      "Temperature (°C)": 13.20,
+      "Humidity (%)": 59.40,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  }
+]

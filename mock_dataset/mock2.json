@@ -1,0 +1,47 @@
+[
+    {
+        "Device Type": "Heater",
+        "Power Consumption (W)": 1800.5,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 18.2,
+        "Humidity (%)": 65.4,
+        "Usage Duration (minutes)": 0,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Air Conditioner",
+        "Power Consumption (W)": 1500.3,
+        "Room Location": "Bedroom",
+        "Temperature (\u00b0C)": 24.5,
+        "Humidity (%)": 55.2,
+        "Usage Duration (minutes)": 0,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Microwave",
+        "Power Consumption (W)": 1000.0,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 25.3,
+        "Humidity (%)": 60.0,
+        "Usage Duration (minutes)": 0,
+        "On/Off Status": "Off"
+    },
+    {
+        "Device Type": "Smart Plug",
+        "Power Consumption (W)": 5.5,
+        "Room Location": "Garage",
+        "Temperature (\u00b0C)": 22.3,
+        "Humidity (%)": 48.9,
+        "Usage Duration (minutes)": 90,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Laptop Charger",
+        "Power Consumption (W)": 28.9,
+        "Room Location": "Office",
+        "Temperature (\u00b0C)": 21.8,
+        "Humidity (%)": 52.3,
+        "Usage Duration (minutes)": 0,
+        "On/Off Status": "Off"
+    }
+]

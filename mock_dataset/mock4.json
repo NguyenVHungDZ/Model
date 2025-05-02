@@ -1,0 +1,38 @@
+[
+  {
+      "Device Type": "Heater",
+      "Power Consumption (W)": 2000.00,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 15.50,
+      "Humidity (%)": 62.30,
+      "Usage Duration (minutes)": 60,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Air Conditioner",
+      "Power Consumption (W)": 1800.00,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 28.90,
+      "Humidity (%)": 75.40,
+      "Usage Duration (minutes)": 240,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Washing Machine",
+      "Power Consumption (W)": 1200.00,
+      "Room Location": "Garage",
+      "Temperature (°C)": 22.10,
+      "Humidity (%)": 50.00,
+      "Usage Duration (minutes)": 45,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Microwave",
+      "Power Consumption (W)": 1100.00,
+      "Room Location": "Kitchen",
+      "Temperature (°C)": 25.70,
+      "Humidity (%)": 58.90,
+      "Usage Duration (minutes)": 20,
+      "On/Off Status": "On"
+  }
+]

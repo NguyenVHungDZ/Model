@@ -1,0 +1,74 @@
+[
+    {
+        "Device Type": "Refrigerator",
+        "Power Consumption (W)": 220.0,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 20.0,
+        "Humidity (%)": 57.0,
+        "Usage Duration (minutes)": 1440,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Microwave",
+        "Power Consumption (W)": 1000.0,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 25.2,
+        "Humidity (%)": 58.4,
+        "Usage Duration (minutes)": 5,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Washing Machine",
+        "Power Consumption (W)": 850.0,
+        "Room Location": "Garage",
+        "Temperature (\u00b0C)": 23.8,
+        "Humidity (%)": 51.9,
+        "Usage Duration (minutes)": 60,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Air Conditioner",
+        "Power Consumption (W)": 1550.0,
+        "Room Location": "Bedroom",
+        "Temperature (\u00b0C)": 27.9,
+        "Humidity (%)": 74.3,
+        "Usage Duration (minutes)": 300,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Heater",
+        "Power Consumption (W)": 1750.0,
+        "Room Location": "Living Room",
+        "Temperature (\u00b0C)": 16.8,
+        "Humidity (%)": 61.2,
+        "Usage Duration (minutes)": 90,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "TV",
+        "Power Consumption (W)": 130.0,
+        "Room Location": "Office",
+        "Temperature (\u00b0C)": 22.5,
+        "Humidity (%)": 47.0,
+        "Usage Duration (minutes)": 240,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Smart Bulb",
+        "Power Consumption (W)": 10.5,
+        "Room Location": "Bathroom",
+        "Temperature (\u00b0C)": 24.0,
+        "Humidity (%)": 65.8,
+        "Usage Duration (minutes)": 30,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Ceiling Fan",
+        "Power Consumption (W)": 68.0,
+        "Room Location": "Living Room",
+        "Temperature (\u00b0C)": 26.3,
+        "Humidity (%)": 68.0,
+        "Usage Duration (minutes)": 500,
+        "On/Off Status": "On"
+    }
+]

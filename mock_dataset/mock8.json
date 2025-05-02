@@ -1,0 +1,47 @@
+[
+  {
+      "Device Type": "Air Conditioner",
+      "Power Consumption (W)": 1600.00,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 30.10,
+      "Humidity (%)": 85.20,
+      "Usage Duration (minutes)": 300,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Ceiling Fan",
+      "Power Consumption (W)": 70.00,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 28.90,
+      "Humidity (%)": 82.30,
+      "Usage Duration (minutes)": 400,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Smart Bulb",
+      "Power Consumption (W)": 11.00,
+      "Room Location": "Office",
+      "Temperature (°C)": 27.50,
+      "Humidity (%)": 80.00,
+      "Usage Duration (minutes)": 90,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "TV",
+      "Power Consumption (W)": 125.00,
+      "Room Location": "Kitchen",
+      "Temperature (°C)": 29.00,
+      "Humidity (%)": 83.40,
+      "Usage Duration (minutes)": 150,
+      "On/Off Status": "On"
+  },
+  {
+      "Device Type": "Laptop Charger",
+      "Power Consumption (W)": 27.00,
+      "Room Location": "Garage",
+      "Temperature (°C)": 28.20,
+      "Humidity (%)": 81.90,
+      "Usage Duration (minutes)": 120,
+      "On/Off Status": "On"
+  }
+]

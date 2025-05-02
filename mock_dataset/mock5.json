@@ -1,0 +1,47 @@
+[
+  {
+      "Device Type": "Smart Bulb",
+      "Power Consumption (W)": 9.50,
+      "Room Location": "Office",
+      "Temperature (°C)": 21.30,
+      "Humidity (%)": 53.20,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  },
+  {
+      "Device Type": "TV",
+      "Power Consumption (W)": 130.00,
+      "Room Location": "Living Room",
+      "Temperature (°C)": 24.80,
+      "Humidity (%)": 47.90,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  },
+  {
+      "Device Type": "Ceiling Fan",
+      "Power Consumption (W)": 80.00,
+      "Room Location": "Bedroom",
+      "Temperature (°C)": 26.10,
+      "Humidity (%)": 68.50,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  },
+  {
+      "Device Type": "Laptop Charger",
+      "Power Consumption (W)": 30.00,
+      "Room Location": "Office",
+      "Temperature (°C)": 20.90,
+      "Humidity (%)": 55.00,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  },
+  {
+      "Device Type": "Smart Plug",
+      "Power Consumption (W)": 6.20,
+      "Room Location": "Garage",
+      "Temperature (°C)": 23.40,
+      "Humidity (%)": 49.80,
+      "Usage Duration (minutes)": 0,
+      "On/Off Status": "Off"
+  }
+]
