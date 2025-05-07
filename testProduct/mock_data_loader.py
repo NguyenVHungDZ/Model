@@ -67,5 +67,5 @@ class MockDataLoader:
             logging.error(f"Invalid JSON format in file {file_path}: {str(e)}")
             return None
         except Exception as e:
-            logging.error(f"Failed to load dataset from {file_path}: {str(e)}")
+            logging.error(f"Failed to Load Appliances from {file_path}: {str(e)}")
             return None

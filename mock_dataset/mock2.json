@@ -5,7 +5,7 @@
         "Room Location": "Kitchen",
         "Temperature (\u00b0C)": 18.2,
         "Humidity (%)": 65.4,
-        "Usage Duration (minutes)": 0,
+        "Usage Duration (minutes)": 0.0,
         "On/Off Status": "On"
     },
     {
@@ -14,7 +14,7 @@
         "Room Location": "Bedroom",
         "Temperature (\u00b0C)": 24.5,
         "Humidity (%)": 55.2,
-        "Usage Duration (minutes)": 0,
+        "Usage Duration (minutes)": 0.0,
         "On/Off Status": "On"
     },
     {
@@ -23,7 +23,7 @@
         "Room Location": "Kitchen",
         "Temperature (\u00b0C)": 25.3,
         "Humidity (%)": 60.0,
-        "Usage Duration (minutes)": 0,
+        "Usage Duration (minutes)": 0.0,
         "On/Off Status": "Off"
     },
     {
@@ -32,7 +32,7 @@
         "Room Location": "Garage",
         "Temperature (\u00b0C)": 22.3,
         "Humidity (%)": 48.9,
-        "Usage Duration (minutes)": 90,
+        "Usage Duration (minutes)": 53.144100000000016,
         "On/Off Status": "On"
     },
     {
@@ -41,7 +41,7 @@
         "Room Location": "Office",
         "Temperature (\u00b0C)": 21.8,
         "Humidity (%)": 52.3,
-        "Usage Duration (minutes)": 0,
+        "Usage Duration (minutes)": 0.0,
         "On/Off Status": "Off"
     }
 ]

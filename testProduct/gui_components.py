@@ -111,12 +111,12 @@ class GUIComponents:
 
         self.main_layout.addWidget(self.input_scroll)
 
-        # Load Dataset, Threshold, and Calculate frame
+        # Load Appliances, Threshold, and Calculate frame
         control_frame = QFrame()
         control_layout = QHBoxLayout(control_frame)
         control_layout.setSpacing(15)
 
-        load_button = QPushButton("Load Dataset")
+        load_button = QPushButton("Load Appliances")
         load_button.clicked.connect(self.load_dataset)
         load_button.setStyleSheet("min-width: 150px;")
         control_layout.addWidget(load_button)
@@ -234,7 +234,7 @@ class GUIComponents:
     def load_dataset(self):
         appliances = self.load_dataset_callback()
         if not appliances:
-            QMessageBox.warning(self.central_widget, "Warning", "Failed to load dataset. Please select a valid JSON file.")
+            QMessageBox.warning(self.central_widget, "Warning", "Failed to Load Appliances. Please select a valid JSON file.")
             return
 
         # Clear existing rows

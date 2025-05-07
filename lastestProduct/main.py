@@ -1,7 +1,9 @@
 import sys
 import os
+import copy
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMessageBox, QFileDialog
+from PyQt5.QtCore import QTime
 from model_loader import ModelLoader
 from preprocessor import preprocess_appliances
 from bill_calculator import BillCalculator
@@ -45,180 +47,263 @@ class EnergyCostPredictorApp:
         # Initialize appliance balancer
         self.appliance_balancer = ApplianceBalancer(self.bill_calculator)
 
+        # Define energy profiles
+        self.energy_profiles = {
+            "Eco": {
+                "max_monthly_bill": 50.0,
+                "usage_factors": {
+                    "Heater": 0.5,
+                    "Air Conditioner": 0.5,
+                    "Microwave": 0.7,
+                    "TV": 0.7,
+                    "Ceiling Fan": 0.8,
+                    "default": 0.9
+                }
+            },
+            "Balanced": {
+                "max_monthly_bill": 100.0,
+                "usage_factors": {
+                    "Heater": 0.8,
+                    "Air Conditioner": 0.8,
+                    "Microwave": 0.9,
+                    "TV": 0.9,
+                    "Ceiling Fan": 0.9,
+                    "default": 1.0
+                }
+            },
+            "Comfort": {
+                "max_monthly_bill": 150.0,
+                "usage_factors": {
+                    "Heater": 1.0,
+                    "Air Conditioner": 1.0,
+                    "Microwave": 1.0,
+                    "TV": 1.0,
+                    "Ceiling Fan": 1.0,
+                    "default": 1.0
+                }
+            },
+            "Normal": {
+                "max_monthly_bill": 200.0,
+                "usage_factors": {
+                    "Heater": 1.0,
+                    "Air Conditioner": 1.0,
+                    "Microwave": 1.0,
+                    "TV": 1.0,
+                    "Ceiling Fan": 1.0,
+                    "default": 1.0
+                }
+            }
+        }
+
         # Initialize app
         self.app = QApplication(sys.argv)
         self.gui = EnergyCostPredictorGUI(
-            self.add_appliance,
             self.set_threshold,
-            self.load_dataset,
-            self.delete_row
+            self.load_dataset
         )
         self.gui.populate_dropdowns(
             list(self.model_loader.device_encoder.classes_),
             list(self.model_loader.room_encoder.classes_)
         )
-        # Connect signal for delete action
-        self.gui.delete_row_signal.connect(self.delete_row)
+        self.gui.profile_changed.connect(self.change_profile)
+        self.gui.time_settings_changed.connect(self.handle_time_settings)
         self.gui.show()
 
     def load_dataset(self):
         """
-        Handle the "Load Dataset" button click to select a JSON file and load appliances.
+        Handle the "Load Appliances" button click to select a JSON file and load appliances.
         """
-        # Open a file dialog to select a JSON dataset
-        file_path, _ = QFileDialog.getOpenFileName(
-            self.gui,
-            "Select Mock Dataset",
-            os.path.join(get_base_path(), "mock_dataset"),
-            "JSON Files (*.json)"
-        )
-        if not file_path:
-            logging.debug("No file selected in file dialog")
-            QMessageBox.warning(self.gui, "Warning", "No file selected.")
-            return
-
-        # Load the selected dataset
-        if not self.data_manager.load_data_from_file(file_path):
-            QMessageBox.warning(self.gui, "Error", "Failed to load dataset. Please select a valid JSON file.")
-            return
-
-        # Preprocess appliances and calculate initial costs
-        self.appliances = self.data_manager.get_appliances()
-        scaled_features, valid_indices = preprocess_appliances(
-            self.appliances,
-            self.model_loader.device_encoder,
-            self.model_loader.room_encoder,
-            self.model_loader.scaler
-        )
-        if scaled_features is None:
-            QMessageBox.warning(self.gui, "Error", "Failed to preprocess appliances.")
-            return
-
-        # Calculate daily costs
-        self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-        self.valid_indices = valid_indices
-
-        # Update the table with the new data
-        self.gui.populate_table(self.appliances, self.daily_costs)
-
-        # Update monthly bill display
-        total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
-        self.gui.update_monthly_bill(total_monthly_bill)
-
-    def add_appliance(self):
-        """
-        Handle the "Add Appliance" button click to add a manually entered appliance to the list
-        and append it to the JSON file.
-        """
-        inputs = self.gui.get_input_values()
-
-        # Validate and convert numeric inputs to floats
         try:
-            inputs["Power Consumption (W)"] = float(inputs["Power Consumption (W)"])
-            inputs["Temperature (°C)"] = float(inputs["Temperature (°C)"])
-            inputs["Humidity (%)"] = float(inputs["Humidity (%)"])
-            inputs["Usage Duration (minutes)"] = float(inputs["Usage Duration (minutes)"])
-        except ValueError as e:
-            logging.error(f"Invalid numeric input: {str(e)}")
-            QMessageBox.warning(self.gui, "Error", "Please enter valid numeric values for Power, Temperature, Humidity, and Duration.")
-            return
+            # Open a file dialog to select a JSON dataset
+            file_path, _ = QFileDialog.getOpenFileName(
+                self.gui,
+                "Select Appliances Dataset",
+                os.path.join(get_base_path(), "mock_dataset"),
+                "JSON Files (*.json)"
+            )
+            if not file_path:
+                logging.debug("No file selected in file dialog")
+                QMessageBox.warning(self.gui, "Warning", "No file selected.")
+                return
 
-        data = preprocess_appliances(
-            [inputs],
-            self.model_loader.device_encoder,
-            self.model_loader.room_encoder,
-            self.model_loader.scaler
-        )
-        scaled_features, valid_indices = data
+            # Load the selected dataset
+            if not self.data_manager.load_data_from_file(file_path):
+                QMessageBox.warning(self.gui, "Error", "Failed to load dataset. Please select a valid JSON file.")
+                return
 
-        if scaled_features is None or not valid_indices:
-            QMessageBox.warning(self.gui, "Error", "Invalid input. Please check your entries.")
-            return
+            # Preprocess appliances and calculate initial costs
+            self.appliances = self.data_manager.get_appliances()
+            self.original_appliances = copy.deepcopy(self.appliances)  # Store original data
+            scaled_features, valid_indices = preprocess_appliances(
+                self.appliances,
+                self.model_loader.device_encoder,
+                self.model_loader.room_encoder,
+                self.model_loader.scaler
+            )
+            if scaled_features is None:
+                QMessageBox.warning(self.gui, "Error", "Failed to preprocess appliances.")
+                return
 
-        # Calculate the daily cost for the new appliance
-        prediction = self.bill_calculator.calculate_daily_costs(scaled_features)
+            # Calculate daily costs
+            self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
+            self.valid_indices = valid_indices
+            self.adjusted_indices = []  # Initialize empty adjusted indices
 
-        # Append the appliance to the JSON file
-        if not self.data_manager.append_appliance_to_file(inputs):
-            QMessageBox.warning(self.gui, "Error", "Failed to append appliance to JSON file.")
-            return
+            # Update the table with the original data
+            self.gui.populate_table(self.appliances, self.daily_costs, self.adjusted_indices)
 
-        # Update the in-memory list
-        self.appliances = self.data_manager.get_appliances()
-        self.daily_costs = np.append(self.daily_costs, prediction[0])
-        self.valid_indices.append(len(self.appliances) - 1)
+            # Update original monthly bill display (default to Normal profile)
+            adjusted_appliances = copy.deepcopy(self.original_appliances)
+            profile = self.energy_profiles["Normal"]
+            usage_factors = profile["usage_factors"]
+            for idx, appliance in enumerate(adjusted_appliances):
+                device_type = appliance["Device Type"]
+                factor = usage_factors.get(device_type, usage_factors["default"])
+                original_usage = appliance["Usage Duration (minutes)"]
+                new_usage = original_usage * factor
+                if new_usage != original_usage:
+                    self.adjusted_indices.append(idx)
+                appliance["Usage Duration (minutes)"] = new_usage
+            scaled_features, valid_indices = preprocess_appliances(
+                adjusted_appliances,
+                self.model_loader.device_encoder,
+                self.model_loader.room_encoder,
+                self.model_loader.scaler
+            )
+            if scaled_features is not None:
+                daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
+                total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(daily_costs)
+                self.gui.update_monthly_bill(total_monthly_bill)
+            self.gui.threshold_var.setValue(profile["max_monthly_bill"])
+        except Exception as e:
+            logging.error(f"Error in load_dataset: {str(e)}")
+            QMessageBox.critical(self.gui, "Error", f"Failed to load dataset: {str(e)}")
 
-        # Update the table
-        self.gui.populate_table(self.appliances, self.daily_costs)
-
-        # Update monthly bill display
-        total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
-        self.gui.update_monthly_bill(total_monthly_bill)
-
-        # Clear the input form
-        self.gui.clear_form()
-
-    def delete_row(self, row):
+    def change_profile(self, profile_name):
         """
-        Handle the "Delete" button click for a specific row to remove the appliance.
+        Handle profile change by updating threshold, displaying usage limits, and calculating predicted bill
+        without modifying the appliances table.
 
         Args:
-            row (int): The row index to delete.
+            profile_name (str): Name of the selected profile.
         """
-        if not self.data_manager.delete_appliance_at_index(row):
-            QMessageBox.warning(self.gui, "Error", "Failed to delete appliance.")
-            return
+        try:
+            if profile_name not in self.energy_profiles:
+                logging.warning(f"Invalid profile: {profile_name}")
+                return
 
-        # Update the in-memory lists
-        self.appliances = self.data_manager.get_appliances()
-        self.daily_costs = np.delete(self.daily_costs, row)
-        self.valid_indices = [i if i < row else i - 1 for i in self.valid_indices if i != row]
+            profile = self.energy_profiles[profile_name]
+            max_monthly_bill = profile["max_monthly_bill"]
+            usage_factors = profile["usage_factors"]
 
-        # Update the table
-        self.gui.populate_table(self.appliances, self.daily_costs)
+            # Update threshold in GUI
+            self.gui.threshold_var.setValue(max_monthly_bill)
 
-        # Update monthly bill display
-        if len(self.daily_costs) > 0:
-            total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
-        else:
-            total_monthly_bill = 0.0
-        self.gui.update_monthly_bill(total_monthly_bill)
+            # Display usage limits in QTextEdit (single list without Limited/Unlimited)
+            message = f"Profile: {profile_name}\n\n"
+            usage_limits = []
+            for device, factor in usage_factors.items():
+                if factor < 1.0:
+                    usage_limits.append(f"{device}: Reduced by {(1.0 - factor) * 100:.0f}%")
+                else:
+                    usage_limits.append(f"{device}: No reduction")
+            message += "\n".join(usage_limits)
+            self.gui.profile_info.setText(message)
+
+            # Calculate predicted bill without modifying the table
+            if hasattr(self, 'original_appliances') and self.original_appliances:
+                # Work with a fresh copy of original appliances
+                adjusted_appliances = copy.deepcopy(self.original_appliances)
+                adjusted_indices = []
+                for idx, appliance in enumerate(adjusted_appliances):
+                    device_type = appliance["Device Type"]
+                    factor = usage_factors.get(device_type, usage_factors["default"])
+                    original_usage = appliance["Usage Duration (minutes)"]
+                    new_usage = original_usage * factor
+                    if new_usage != original_usage:
+                        adjusted_indices.append(idx)
+                    appliance["Usage Duration (minutes)"] = new_usage
+
+                # Calculate costs for adjusted appliances
+                scaled_features, valid_indices = preprocess_appliances(
+                    adjusted_appliances,
+                    self.model_loader.device_encoder,
+                    self.model_loader.room_encoder,
+                    self.model_loader.scaler
+                )
+                if scaled_features is not None:
+                    daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
+                    # Update original bill display (table remains unchanged)
+                    total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(daily_costs)
+                    self.gui.update_monthly_bill(total_monthly_bill)
+
+            logging.debug(f"Profile changed to {profile_name} with max bill ${max_monthly_bill}")
+        except Exception as e:
+            logging.error(f"Error in change_profile: {str(e)}")
+            QMessageBox.critical(self.gui, "Error", f"Failed to change profile: {str(e)}")
+
+    def handle_time_settings(self, time_str, heater_on, water_heater_on):
+        """
+        Handle changes to arrival time and appliance activation settings.
+
+        Args:
+            time_str (str): Arrival time in HH:mm format.
+            heater_on (bool): Whether to turn on the heater.
+            water_heater_on (bool): Whether to turn on the water heater.
+        """
+        try:
+            logging.debug(f"Received time settings: Arrival {time_str}, Heater {heater_on}, Water Heater {water_heater_on}")
+            # Placeholder for scheduling logic (e.g., turning on heater/water heater at specified time)
+        except Exception as e:
+            logging.error(f"Error in handle_time_settings: {str(e)}")
+            QMessageBox.critical(self.gui, "Error", f"Failed to update time settings: {str(e)}")
 
     def set_threshold(self):
         """
         Handle setting the maximum monthly bill threshold by balancing appliance usage.
         """
-        max_monthly_bill = self.gui.get_threshold()
-        adjusted_appliances, adjustments = self.appliance_balancer.balance_appliances(
-            self.appliances,
-            self.daily_costs,
-            max_monthly_bill,
-            self.valid_indices
-        )
+        try:
+            max_monthly_bill = self.gui.get_threshold()
+            if not hasattr(self, 'appliances') or not self.appliances:
+                QMessageBox.warning(self.gui, "Warning", "No appliances loaded. Please load a dataset first.")
+                return
 
-        # Update appliances with adjusted values
-        self.data_manager.update_appliances(adjusted_appliances)
-        self.appliances = adjusted_appliances
+            adjusted_appliances, adjustments = self.appliance_balancer.balance_appliances(
+                self.appliances,
+                self.daily_costs,
+                max_monthly_bill,
+                self.valid_indices
+            )
 
-        # Recalculate daily costs with adjusted usage
-        scaled_features, valid_indices = preprocess_appliances(
-            self.appliances,
-            self.model_loader.device_encoder,
-            self.model_loader.room_encoder,
-            self.model_loader.scaler
-        )
-        if scaled_features is not None:
-            self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-            self.valid_indices = valid_indices
-            self.gui.populate_table(self.appliances, self.daily_costs)
+            # Update appliances with adjusted values
+            self.adjusted_indices = [idx for idx in range(len(adjusted_appliances))
+                                    if adjusted_appliances[idx]["Usage Duration (minutes)"] !=
+                                       self.appliances[idx]["Usage Duration (minutes)"]]
+            self.data_manager.update_appliances(adjusted_appliances)
+            self.appliances = adjusted_appliances
 
-            # Update monthly bill display
-            total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
-            self.gui.update_monthly_bill(total_monthly_bill)
+            # Recalculate daily costs with adjusted usage
+            scaled_features, valid_indices = preprocess_appliances(
+                self.appliances,
+                self.model_loader.device_encoder,
+                self.model_loader.room_encoder,
+                self.model_loader.scaler
+            )
+            if scaled_features is not None:
+                self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
+                self.valid_indices = valid_indices
+                self.gui.populate_table(self.appliances, self.daily_costs, self.adjusted_indices)
 
-        # Show adjustments in a dialog
-        dialog = AdjustmentDialog(adjustments, self.appliances, self.gui)
-        dialog.exec_()
+                # Update original monthly bill display
+                total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
+                self.gui.update_monthly_bill(total_monthly_bill)
+
+            # Show adjustments in a dialog
+            dialog = AdjustmentDialog(adjustments, self.appliances, self.gui)
+            dialog.exec_()
+        except Exception as e:
+            logging.error(f"Error in set_threshold: {str(e)}")
+            QMessageBox.critical(self.gui, "Error", f"Failed to set threshold: {str(e)}")
 
     def run(self):
         """

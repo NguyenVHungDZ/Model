@@ -10,7 +10,7 @@ class DataManager:
         Appliances will be loaded via user selection.
         """
         self.appliances = []
-        self.current_file_path = None  # Track the currently loaded JSON file
+        self.current_file_path = None
         logging.debug("DataManager initialized without initial data")
 
     def load_data_from_file(self, file_path):
@@ -26,37 +26,11 @@ class DataManager:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 self.appliances = json.load(f)
-            self.current_file_path = file_path  # Store the loaded file path
+            self.current_file_path = file_path
             logging.debug(f"Loaded {len(self.appliances)} appliances from {file_path}")
             return True
         except Exception as e:
             logging.error(f"Failed to load data from {file_path}: {str(e)}")
-            return False
-
-    def append_appliance_to_file(self, appliance):
-        """
-        Append a new appliance to the currently loaded JSON file.
-
-        Args:
-            appliance (dict): The appliance to append.
-
-        Returns:
-            bool: True if appending is successful, False otherwise.
-        """
-        if not self.current_file_path:
-            logging.error("No JSON file loaded. Cannot append appliance.")
-            return False
-
-        try:
-            # Append the new appliance to the in-memory list
-            self.appliances.append(appliance)
-            # Write the updated list back to the JSON file
-            with open(self.current_file_path, 'w', encoding='utf-8') as f:
-                json.dump(self.appliances, f, indent=4)
-            logging.debug(f"Appended appliance to {self.current_file_path}")
-            return True
-        except Exception as e:
-            logging.error(f"Failed to append appliance to {self.current_file_path}: {str(e)}")
             return False
 
     def delete_appliance_at_index(self, index):
@@ -78,9 +52,7 @@ class DataManager:
             return False
 
         try:
-            # Remove the appliance from the in-memory list
             self.appliances.pop(index)
-            # Write the updated list back to the JSON file
             with open(self.current_file_path, 'w', encoding='utf-8') as f:
                 json.dump(self.appliances, f, indent=4)
             logging.debug(f"Deleted appliance at index {index} from {self.current_file_path}")

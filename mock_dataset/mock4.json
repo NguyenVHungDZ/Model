@@ -1,38 +1,38 @@
 [
-  {
-      "Device Type": "Heater",
-      "Power Consumption (W)": 2000.00,
-      "Room Location": "Living Room",
-      "Temperature (°C)": 15.50,
-      "Humidity (%)": 62.30,
-      "Usage Duration (minutes)": 60,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Air Conditioner",
-      "Power Consumption (W)": 1800.00,
-      "Room Location": "Bedroom",
-      "Temperature (°C)": 28.90,
-      "Humidity (%)": 75.40,
-      "Usage Duration (minutes)": 240,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Washing Machine",
-      "Power Consumption (W)": 1200.00,
-      "Room Location": "Garage",
-      "Temperature (°C)": 22.10,
-      "Humidity (%)": 50.00,
-      "Usage Duration (minutes)": 45,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Microwave",
-      "Power Consumption (W)": 1100.00,
-      "Room Location": "Kitchen",
-      "Temperature (°C)": 25.70,
-      "Humidity (%)": 58.90,
-      "Usage Duration (minutes)": 20,
-      "On/Off Status": "On"
-  }
+    {
+        "Device Type": "Heater",
+        "Power Consumption (W)": 2000.0,
+        "Room Location": "Living Room",
+        "Temperature (\u00b0C)": 15.5,
+        "Humidity (%)": 62.3,
+        "Usage Duration (minutes)": 1.2000000000000002,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Air Conditioner",
+        "Power Consumption (W)": 1800.0,
+        "Room Location": "Bedroom",
+        "Temperature (\u00b0C)": 28.9,
+        "Humidity (%)": 75.4,
+        "Usage Duration (minutes)": 4.800000000000001,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Washing Machine",
+        "Power Consumption (W)": 1200.0,
+        "Room Location": "Garage",
+        "Temperature (\u00b0C)": 22.1,
+        "Humidity (%)": 50.0,
+        "Usage Duration (minutes)": 26.572050000000008,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Microwave",
+        "Power Consumption (W)": 1100.0,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 25.7,
+        "Humidity (%)": 58.9,
+        "Usage Duration (minutes)": 2.722733999999999,
+        "On/Off Status": "On"
+    }
 ]

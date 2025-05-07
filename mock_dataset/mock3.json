@@ -1,56 +1,56 @@
 [
-  {
-      "Device Type": "Ceiling Fan",
-      "Power Consumption (W)": 75.40,
-      "Room Location": "Living Room",
-      "Temperature (°C)": 26.70,
-      "Humidity (%)": 70.20,
-      "Usage Duration (minutes)": 300,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "TV",
-      "Power Consumption (W)": 120.60,
-      "Room Location": "Bedroom",
-      "Temperature (°C)": 22.90,
-      "Humidity (%)": 45.60,
-      "Usage Duration (minutes)": 180,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Smart Bulb",
-      "Power Consumption (W)": 10.80,
-      "Room Location": "Office",
-      "Temperature (°C)": 20.50,
-      "Humidity (%)": 55.80,
-      "Usage Duration (minutes)": 60,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Washing Machine",
-      "Power Consumption (W)": 650.90,
-      "Room Location": "Garage",
-      "Temperature (°C)": 24.30,
-      "Humidity (%)": 52.40,
-      "Usage Duration (minutes)": 90,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Laptop Charger",
-      "Power Consumption (W)": 28.90,
-      "Room Location": "Bathroom",
-      "Temperature (°C)": 23.60,
-      "Humidity (%)": 68.30,
-      "Usage Duration (minutes)": 150,
-      "On/Off Status": "On"
-  },
-  {
-      "Device Type": "Refrigerator",
-      "Power Consumption (W)": 200.00,
-      "Room Location": "Kitchen",
-      "Temperature (°C)": 19.80,
-      "Humidity (%)": 58.10,
-      "Usage Duration (minutes)": 1440,
-      "On/Off Status": "On"
-  }
+    {
+        "Device Type": "Ceiling Fan",
+        "Power Consumption (W)": 75.4,
+        "Room Location": "Living Room",
+        "Temperature (\u00b0C)": 26.7,
+        "Humidity (%)": 70.2,
+        "Usage Duration (minutes)": 71.66361600000002,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "TV",
+        "Power Consumption (W)": 120.6,
+        "Room Location": "Bedroom",
+        "Temperature (\u00b0C)": 22.9,
+        "Humidity (%)": 45.6,
+        "Usage Duration (minutes)": 22.0541454,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Smart Bulb",
+        "Power Consumption (W)": 10.8,
+        "Room Location": "Office",
+        "Temperature (\u00b0C)": 20.5,
+        "Humidity (%)": 55.8,
+        "Usage Duration (minutes)": 35.4294,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Washing Machine",
+        "Power Consumption (W)": 650.9,
+        "Room Location": "Garage",
+        "Temperature (\u00b0C)": 24.3,
+        "Humidity (%)": 52.4,
+        "Usage Duration (minutes)": 53.144100000000016,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Laptop Charger",
+        "Power Consumption (W)": 28.9,
+        "Room Location": "Bathroom",
+        "Temperature (\u00b0C)": 23.6,
+        "Humidity (%)": 68.3,
+        "Usage Duration (minutes)": 88.57350000000001,
+        "On/Off Status": "On"
+    },
+    {
+        "Device Type": "Refrigerator",
+        "Power Consumption (W)": 200.0,
+        "Room Location": "Kitchen",
+        "Temperature (\u00b0C)": 19.8,
+        "Humidity (%)": 58.1,
+        "Usage Duration (minutes)": 850.3056000000003,
+        "On/Off Status": "On"
+    }
 ]
