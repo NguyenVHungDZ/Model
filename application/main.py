@@ -11,6 +11,9 @@ from appliance_balancer import ApplianceBalancer
 from data_manager import DataManager
 from gui_components import EnergyCostPredictorGUI
 from adjustment_dialog import AdjustmentDialog
+from preprocessor import preprocess_appliances
+from usage_analyzer import UsageAnalyzer
+from smart_automator import SmartAutomator
 import logging
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,10 +24,48 @@ def get_base_path():
         # Running as .exe (PyInstaller)
         return os.path.dirname(sys.executable)
     else:
-        # Running as script (inside lastestProduct)
+        # Running as script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         # Go up one level to Model
         return os.path.dirname(script_dir)
+
+# Function to dynamically locate data.csv
+def locate_data_csv(base_path):
+    """
+    Search for data.csv in the base path or subdirectories.
+    If not found, prompt the user to select it.
+
+    Args:
+        base_path (str): Base directory to start the search.
+
+    Returns:
+        str: Path to data.csv or None if not found/selected.
+    """
+    possible_paths = [
+        os.path.join(base_path, "data.csv"),
+        os.path.join(base_path, "data", "data.csv"),
+        os.path.join(base_path, "mock_dataset", "data.csv")
+    ]
+    
+    for path in possible_paths:
+        if os.path.exists(path):
+            logging.debug(f"Found data.csv at {path}")
+            return path
+    
+    # If not found, prompt user to select the file
+    app = QApplication.instance() or QApplication(sys.argv)
+    file_path, _ = QFileDialog.getOpenFileName(
+        None,
+        "Select Energy Consumption Data File",
+        base_path,
+        "CSV Files (*.csv)"
+    )
+    if file_path:
+        logging.debug(f"User selected data.csv at {file_path}")
+        return file_path
+    else:
+        logging.warning("No data.csv selected")
+        return None
 
 class EnergyCostPredictorApp:
     def __init__(self):
@@ -46,6 +87,17 @@ class EnergyCostPredictorApp:
 
         # Initialize appliance balancer
         self.appliance_balancer = ApplianceBalancer(self.bill_calculator)
+
+        # Dynamically locate data.csv
+        base_path = get_base_path()
+        csv_path = locate_data_csv(base_path)
+        if not csv_path:
+            QMessageBox.critical(None, "Error", "Could not locate or select data.csv. Exiting.")
+            sys.exit(1)
+
+        # Initialize UsageAnalyzer and SmartAutomator with dynamic CSV path
+        self.analyzer = UsageAnalyzer(csv_path)
+        self.automator = SmartAutomator(self.analyzer)
 
         # Define energy profiles
         self.energy_profiles = {
@@ -99,7 +151,8 @@ class EnergyCostPredictorApp:
         self.app = QApplication(sys.argv)
         self.gui = EnergyCostPredictorGUI(
             self.set_threshold,
-            self.load_dataset
+            self.load_dataset,
+            self.automator
         )
         self.gui.populate_dropdowns(
             list(self.model_loader.device_encoder.classes_),

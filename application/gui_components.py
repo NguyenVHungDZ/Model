@@ -12,17 +12,19 @@ class EnergyCostPredictorGUI(QWidget):
     profile_changed = pyqtSignal(str)  # Signal for profile changes
     time_settings_changed = pyqtSignal(str, bool, bool)  # Signal for arrival time and appliance settings
 
-    def __init__(self, set_threshold_callback, load_dataset_callback):
+    def __init__(self, set_threshold_callback, load_dataset_callback, automator):
         """
-        Initialize the EnergyCostPredictorGUI with a 1400px-wide layout and blue-cream theme, without delete functionality.
+        Initialize the EnergyCostPredictorGUI with a 1400px-wide layout, blue-cream theme, and automation features.
 
         Args:
             set_threshold_callback (callable): Callback function to set the monthly bill threshold.
             load_dataset_callback (callable): Callback function to load a dataset.
+            automator (SmartAutomator): Instance for automation features.
         """
         super().__init__()
         self.set_threshold_callback = set_threshold_callback
         self.load_dataset_callback = load_dataset_callback
+        self.automator = automator
         self.init_ui()
 
     def init_ui(self):
@@ -30,7 +32,7 @@ class EnergyCostPredictorGUI(QWidget):
         Set up the GUI components with a 1400px-wide layout for appliance properties, including Usage Adjusted column.
         """
         self.setWindowTitle("Smart Home Energy Cost Predictor")
-        self.setFixedSize(1400, 1000)  # Window width 1400px, height 950px
+        self.setFixedSize(640, 480)  # Window width 1400px, height 950px
 
         # Modern font (Roboto preferred, Arial as fallback)
         font = QFont("Roboto", 11)
@@ -325,12 +327,48 @@ class EnergyCostPredictorGUI(QWidget):
 
         main_layout.addLayout(settings_layout)
 
+        # Automation controls
+        automation_layout = QVBoxLayout()
+        automation_label = QLabel("Automation Controls")
+        automation_layout.addWidget(automation_label)
+
+        # Button to suggest automation rules
+        suggest_rules_btn = QPushButton("Suggest Automation Rules")
+        suggest_rules_btn.clicked.connect(self.suggest_rules)
+        automation_layout.addWidget(suggest_rules_btn)
+
+        # Button to simulate automation impact
+        simulate_impact_btn = QPushButton("Simulate Automation Impact")
+        simulate_impact_btn.clicked.connect(self.simulate_impact)
+        automation_layout.addWidget(simulate_impact_btn)
+
+        # Text area to display suggestions
+        self.suggestions_text = QTextEdit()
+        self.suggestions_text.setReadOnly(True)
+        automation_layout.addWidget(self.suggestions_text)
+
+        main_layout.addLayout(automation_layout)
+
         # Add stretch for clean spacing
         main_layout.addStretch(1)
 
         # Apply layout
         self.setLayout(main_layout)
         logging.debug("GUI components initialized with 1400px-wide layout and blue-cream theme, with Usage Adjusted column")
+
+    def suggest_rules(self):
+        """Display suggested automation rules."""
+        rules = self.automator.suggest_automation_rules()
+        suggestions = "\n".join([f"{rule['action']} when {rule['condition']} ({rule['time_range']})" for rule in rules])
+        self.suggestions_text.setText(suggestions)
+        logging.debug("Automation rules suggested")
+
+    def simulate_impact(self):
+        """Simulate the impact of automation rules and display the result."""
+        rules = self.automator.suggest_automation_rules()
+        savings = self.automator.simulate_automation_impact(rules, self.automator.analyzer.csv_path)
+        QMessageBox.information(self, "Simulation Result", f"Estimated energy savings: {savings} kWh")
+        logging.debug(f"Simulated automation impact: {savings} kWh saved")
 
     def update_time_settings(self):
         """
