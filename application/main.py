@@ -3,118 +3,343 @@ import os
 import copy
 import numpy as np
 from PyQt5.QtWidgets import QApplication, QMessageBox, QFileDialog
-from PyQt5.QtCore import QTime
+from PyQt5.QtCore import QTimer, QTime
 from model_loader import ModelLoader
 from preprocessor import preprocess_appliances
 from bill_calculator import BillCalculator
-from appliance_balancer import ApplianceBalancer
 from data_manager import DataManager
-from gui_components import EnergyCostPredictorGUI
-from adjustment_dialog import AdjustmentDialog
+from gui_components import EnergyCostPredictorGUI, SettingsDialog
+import urllib.request
 import logging
+import pickle
+from google.cloud import storage
+from google.auth.credentials import AnonymousCredentials
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Function to get the base path of the executable or script
 def get_base_path():
     if getattr(sys, 'frozen', False):
-        # Running as .exe (PyInstaller)
         return os.path.dirname(sys.executable)
     else:
-        # Running as script (inside lastestProduct)
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        # Go up one level to Model
         return os.path.dirname(script_dir)
 
 class EnergyCostPredictorApp:
     def __init__(self):
-        """
-        Initialize the EnergyCostPredictorApp.
-        """
-        # Initialize model loader
+        self.app = QApplication(sys.argv)
         self.model_loader = ModelLoader()
         success, message = self.model_loader.load_assets()
         if not success:
             QMessageBox.critical(None, "Error", message)
             sys.exit(1)
 
-        # Initialize data manager
         self.data_manager = DataManager()
-
-        # Initialize bill calculator
         self.bill_calculator = BillCalculator(self.model_loader.model)
 
-        # Initialize appliance balancer
-        self.appliance_balancer = ApplianceBalancer(self.bill_calculator)
-
-        # Define energy profiles
         self.energy_profiles = {
             "Eco": {
-                "max_monthly_bill": 50.0,
                 "usage_factors": {
                     "Heater": 0.5,
                     "Air Conditioner": 0.5,
                     "Microwave": 0.7,
                     "TV": 0.7,
                     "Ceiling Fan": 0.8,
+                    "Smart Plug": 0.9,
+                    "Laptop Charger": 0.9,
+                    "Refrigerator": 1.0,
                     "default": 0.9
                 }
             },
             "Balanced": {
-                "max_monthly_bill": 100.0,
                 "usage_factors": {
                     "Heater": 0.8,
                     "Air Conditioner": 0.8,
                     "Microwave": 0.9,
                     "TV": 0.9,
                     "Ceiling Fan": 0.9,
+                    "Smart Plug": 0.95,
+                    "Laptop Charger": 0.95,
+                    "Refrigerator": 1.0,
                     "default": 1.0
                 }
             },
             "Comfort": {
-                "max_monthly_bill": 150.0,
                 "usage_factors": {
                     "Heater": 1.0,
                     "Air Conditioner": 1.0,
                     "Microwave": 1.0,
                     "TV": 1.0,
                     "Ceiling Fan": 1.0,
+                    "Smart Plug": 1.0,
+                    "Laptop Charger": 1.0,
+                    "Refrigerator": 1.0,
                     "default": 1.0
                 }
             },
             "Normal": {
-                "max_monthly_bill": 200.0,
                 "usage_factors": {
                     "Heater": 1.0,
                     "Air Conditioner": 1.0,
                     "Microwave": 1.0,
                     "TV": 1.0,
                     "Ceiling Fan": 1.0,
+                    "Smart Plug": 1.0,
+                    "Laptop Charger": 1.0,
+                    "Refrigerator": 1.0,
                     "default": 1.0
                 }
             }
         }
 
-        # Initialize app
-        self.app = QApplication(sys.argv)
-        self.gui = EnergyCostPredictorGUI(
-            self.set_threshold,
-            self.load_dataset
-        )
+        self.gui = EnergyCostPredictorGUI(self.load_dataset)
         self.gui.populate_dropdowns(
             list(self.model_loader.device_encoder.classes_),
             list(self.model_loader.room_encoder.classes_)
         )
         self.gui.profile_changed.connect(self.change_profile)
-        self.gui.time_settings_changed.connect(self.handle_time_settings)
+        self.gui.bill_update_requested.connect(self.update_bill_for_day)
+        self.gui.check_model_update.connect(self.check_for_model_update)
+        self.gui.open_settings.connect(self.open_settings_dialog)
+        self.gui.toggle_owner_home.connect(self.toggle_owner_home)
+        self.gui.save_return_time.connect(self.save_return_time_handler)
+
+        # Initialize settings with defaults
+        self.settings = {
+            "ac_temp_threshold": 25,
+            "heater_temp_threshold": 18,
+            "turn_on_before": {
+                "Air Conditioner": 30,
+                "Heater": 30,
+                "Water Heater": 30,
+                "Dehumidifier": 30
+            },
+            "turn_off_period": 60,
+            "grace_period": 15
+        }
+
+        # Owner state management
+        self.owner_home = False
+        self.appliance_states = {
+            "Air Conditioner": False,
+            "Heater": False,
+            "Water Heater": False,
+            "Dehumidifier": False,
+            "Refrigerator": True
+        }
+        self.time_away = 0
+        self.grace_countdown = 0
+        self.return_time_passed = False
+        self.saved_return_time = None  # Initially no saved return time
+
+        # Timer for owner status updates
+        self.owner_status_timer = QTimer()
+        self.owner_status_timer.timeout.connect(self.update_owner_status)
+        self.owner_status_timer.start(60000)
+
+        self.update_weather_display()
+        self.weather_timer = QTimer()
+        self.weather_timer.timeout.connect(self.update_weather_display)
+        self.weather_timer.start(30 * 60 * 1000)
+        self.current_model_folder = None
+        self.current_profile = "Normal"
         self.gui.show()
 
-    def load_dataset(self):
-        """
-        Handle the "Load Appliances" button click to select a JSON file and load appliances.
-        """
+        self.model_folders_file = os.path.join(get_base_path(), "model_folders.txt")
+        if not os.path.exists(self.model_folders_file):
+            with open(self.model_folders_file, 'w') as f:
+                f.write("")
+
+    def save_return_time_handler(self):
+        """Handle the saving of the return time and trigger an immediate status update."""
+        self.saved_return_time = self.gui.expected_return_time_edit.time()
+        logging.debug(f"Saved return time: {self.saved_return_time.toString('HH:mm')}")
+        self.update_owner_status()
+
+    def load_seen_folders(self):
+        seen_folders = set()
         try:
-            # Open a file dialog to select a JSON dataset
+            with open(self.model_folders_file, 'r') as f:
+                for line in f:
+                    folder = line.strip()
+                    if folder:
+                        seen_folders.add(folder)
+        except Exception as e:
+            logging.error(f"Failed to read model_folders.txt: {str(e)}")
+        return seen_folders
+
+    def save_seen_folders(self, seen_folders):
+        try:
+            with open(self.model_folders_file, 'w') as f:
+                for folder in sorted(seen_folders):
+                    f.write(f"{folder}\n")
+        except Exception as e:
+            logging.error(f"Failed to write to model_folders.txt: {str(e)}")
+
+    def toggle_owner_home(self):
+        self.owner_home = not self.owner_home
+        if self.owner_home:
+            self.grace_countdown = 0
+            self.return_time_passed = False
+            self.time_away = 0
+        else:
+            self.time_away = 0
+        self.update_owner_status()
+
+    def reduce_appliance_power(self):
+        if not hasattr(self, 'original_appliances') or not self.original_appliances:
+            return
+        for appliance in self.original_appliances:
+            device_type = appliance["Device Type"]
+            if device_type != "Refrigerator":
+                original_usage = appliance["Usage Duration (minutes)"]
+                reduced_usage = original_usage * 0.5
+                appliance["Usage Duration (minutes)"] = reduced_usage
+                logging.debug(f"Reduced power for {device_type}: {original_usage} -> {reduced_usage} minutes")
+        self.calculate_monthly_bill_for_7_days()
+
+    def update_owner_status(self):
+        current_time = QTime.currentTime()
+        if self.owner_home:
+            self.gui.owner_status_label.setText("Owner is home")
+            self.time_away = 0
+            self.grace_countdown = 0
+            self.return_time_passed = False
+            for appliance in ["Air Conditioner", "Heater", "Water Heater", "Dehumidifier"]:
+                self.appliance_states[appliance] = True
+        else:
+            if self.gui.enable_return_time_checkbox.isChecked() and self.saved_return_time:
+                if current_time < self.saved_return_time:
+                    time_left = current_time.secsTo(self.saved_return_time) // 60
+                    hours = time_left // 60
+                    minutes = time_left % 60
+                    self.gui.owner_status_label.setText(f"Time left: {hours:02d}:{minutes:02d}")
+                    self.return_time_passed = False
+                    for appliance in ["Air Conditioner", "Heater", "Water Heater", "Dehumidifier"]:
+                        turn_on_before = self.settings["turn_on_before"][appliance]
+                        if time_left <= turn_on_before:
+                            self.appliance_states[appliance] = True
+                        else:
+                            self.appliance_states[appliance] = False
+                else:
+                    if not self.return_time_passed:
+                        self.return_time_passed = True
+                        self.grace_countdown = self.settings["grace_period"]
+                        logging.debug(f"Return time passed. Starting grace period countdown: {self.grace_countdown} minutes")
+                    if self.grace_countdown > 0:
+                        hours = self.grace_countdown // 60
+                        minutes = self.grace_countdown % 60
+                        self.gui.owner_status_label.setText(f"Missed Return - Grace Period: {hours:02d}:{minutes:02d}")
+                        self.grace_countdown -= 1
+                    else:
+                        self.gui.owner_status_label.setText("Grace Period Ended - Power Reduced")
+                        self.reduce_appliance_power()
+                        for appliance in ["Air Conditioner", "Heater", "Water Heater", "Dehumidifier"]:
+                            self.appliance_states[appliance] = False
+            else:
+                self.gui.owner_status_label.setText("Away")
+                self.return_time_passed = False
+                self.grace_countdown = 0
+                turn_off_period = self.settings["turn_off_period"]
+                if self.time_away >= turn_off_period:
+                    turn_off_order = ["Dehumidifier", "Water Heater", "Heater", "Air Conditioner"]
+                    for i, appliance in enumerate(turn_off_order):
+                        if self.time_away >= turn_off_period + i * 5:
+                            self.appliance_states[appliance] = False
+            self.time_away += 1
+        logging.debug(f"Owner status updated: Home={self.owner_home}, States={self.appliance_states}")
+
+    def open_settings_dialog(self):
+        if not hasattr(self, 'original_appliances') or not self.original_appliances:
+            QMessageBox.warning(self.gui, "Warning", "Please load a dataset first.")
+            return
+        dialog = SettingsDialog(self.gui)
+        if dialog.exec_():
+            self.settings = dialog.get_settings()
+            logging.debug(f"Settings updated: {self.settings}")
+            self.update_weather_display()
+
+    def check_for_model_update(self):
+        try:
+            seen_folders = self.load_seen_folders()
+            storage_client = storage.Client(credentials=AnonymousCredentials())
+            bucket = storage_client.bucket("big_data32")
+            blobs = bucket.list_blobs(delimiter="/")
+            current_folders = set(blob.name.split('/')[0] for blob in blobs if '/' in blob.name)
+            new_seen_folders = seen_folders.union(current_folders)
+            self.save_seen_folders(new_seen_folders)
+            new_folders = current_folders - seen_folders
+            if not new_folders:
+                QMessageBox.information(self.gui, "No Update Found", "No new model folders found.")
+                return
+            for folder in sorted(new_folders):
+                model_url = f"https://storage.googleapis.com/big_data32/{folder}/gb_model.pkl"
+                try:
+                    urllib.request.urlopen(model_url).close()
+                except urllib.error.HTTPError as e:
+                    continue
+                model_path = os.path.join(get_base_path(), "models", "gb_model.pkl")
+                old_model_path = model_path + ".old"
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                if os.path.exists(model_path):
+                    os.rename(model_path, old_model_path)
+                    os.remove(old_model_path)
+                urllib.request.urlretrieve(model_url, model_path)
+                self.model_loader.model = pickle.load(open(model_path, "rb"))
+                self.bill_calculator = BillCalculator(self.model_loader.model)
+                self.current_model_folder = folder
+                QMessageBox.information(
+                    self.gui,
+                    "Model Updated",
+                    f"The new model from {folder} has been downloaded and replaced."
+                )
+            if new_folders and hasattr(self, 'original_appliances') and self.original_appliances:
+                self.calculate_monthly_bill_for_7_days()
+        except Exception as e:
+            logging.error(f"Error checking for model update: {str(e)}")
+            QMessageBox.critical(self.gui, "Error", f"Failed to check for model update: {str(e)}")
+
+    def calculate_monthly_bill_for_7_days(self):
+        try:
+            if not hasattr(self, 'original_appliances') or not self.original_appliances:
+                self.gui.update_monthly_bill(0.0)
+                return
+            dates = sorted(list(set(item["Date"] for item in self.original_appliances)))
+            if len(dates) != 7:
+                self.gui.update_monthly_bill(0.0)
+                return
+            profile = self.energy_profiles[self.current_profile]
+            usage_factors = profile["usage_factors"]
+            total_daily_costs = 0.0
+            num_days = len(dates)
+            for date in dates:
+                daily_data = [item for item in self.original_appliances if item["Date"] == date]
+                adjusted_appliances = copy.deepcopy(daily_data)
+                for idx, appliance in enumerate(adjusted_appliances):
+                    device_type = appliance["Device Type"]
+                    factor = usage_factors.get(device_type, usage_factors["default"])
+                    original_usage = appliance["Usage Duration (minutes)"]
+                    appliance["Usage Duration (minutes)"] = original_usage * factor
+                scaled_features, valid_indices = preprocess_appliances(
+                    adjusted_appliances,
+                    self.model_loader.device_encoder,
+                    self.model_loader.room_encoder,
+                    self.model_loader.scaler
+                )
+                if scaled_features is not None:
+                    daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
+                    total_daily_costs += sum(daily_costs)
+                else:
+                    self.gui.update_monthly_bill(0.0)
+                    return
+            average_daily_cost = total_daily_costs / num_days
+            total_monthly_bill = average_daily_cost 
+            self.gui.update_monthly_bill(total_monthly_bill)
+        except Exception as e:
+            logging.error(f"Error calculating monthly bill for 7 days: {str(e)}")
+            self.gui.update_monthly_bill(0.0)
+
+    def load_dataset(self):
+        try:
             file_path, _ = QFileDialog.getOpenFileName(
                 self.gui,
                 "Select Appliances Dataset",
@@ -122,84 +347,29 @@ class EnergyCostPredictorApp:
                 "JSON Files (*.json)"
             )
             if not file_path:
-                logging.debug("No file selected in file dialog")
                 QMessageBox.warning(self.gui, "Warning", "No file selected.")
                 return
-
-            # Load the selected dataset
             if not self.data_manager.load_data_from_file(file_path):
                 QMessageBox.warning(self.gui, "Error", "Failed to load dataset. Please select a valid JSON file.")
                 return
-
-            # Preprocess appliances and calculate initial costs
             self.appliances = self.data_manager.get_appliances()
-            self.original_appliances = copy.deepcopy(self.appliances)  # Store original data
-            scaled_features, valid_indices = preprocess_appliances(
-                self.appliances,
-                self.model_loader.device_encoder,
-                self.model_loader.room_encoder,
-                self.model_loader.scaler
-            )
-            if scaled_features is None:
-                QMessageBox.warning(self.gui, "Error", "Failed to preprocess appliances.")
-                return
-
-            # Calculate daily costs
-            self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-            self.valid_indices = valid_indices
-            self.adjusted_indices = []  # Initialize empty adjusted indices
-
-            # Update the table with the original data
-            self.gui.populate_table(self.appliances, self.daily_costs, self.adjusted_indices)
-
-            # Update original monthly bill display (default to Normal profile)
-            adjusted_appliances = copy.deepcopy(self.original_appliances)
-            profile = self.energy_profiles["Normal"]
-            usage_factors = profile["usage_factors"]
-            for idx, appliance in enumerate(adjusted_appliances):
-                device_type = appliance["Device Type"]
-                factor = usage_factors.get(device_type, usage_factors["default"])
-                original_usage = appliance["Usage Duration (minutes)"]
-                new_usage = original_usage * factor
-                if new_usage != original_usage:
-                    self.adjusted_indices.append(idx)
-                appliance["Usage Duration (minutes)"] = new_usage
-            scaled_features, valid_indices = preprocess_appliances(
-                adjusted_appliances,
-                self.model_loader.device_encoder,
-                self.model_loader.room_encoder,
-                self.model_loader.scaler
-            )
-            if scaled_features is not None:
-                daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-                total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(daily_costs)
-                self.gui.update_monthly_bill(total_monthly_bill)
-            self.gui.threshold_var.setValue(profile["max_monthly_bill"])
+            self.original_appliances = copy.deepcopy(self.appliances)
+            self.gui.set_weekly_data(self.appliances)
+            if self.appliances:
+                self.calculate_monthly_bill_for_7_days()
+            else:
+                QMessageBox.warning(self.gui, "Error", "Empty dataset loaded.")
         except Exception as e:
             logging.error(f"Error in load_dataset: {str(e)}")
             QMessageBox.critical(self.gui, "Error", f"Failed to load dataset: {str(e)}")
 
     def change_profile(self, profile_name):
-        """
-        Handle profile change by updating threshold, displaying usage limits, and calculating predicted bill
-        without modifying the appliances table.
-
-        Args:
-            profile_name (str): Name of the selected profile.
-        """
         try:
             if profile_name not in self.energy_profiles:
-                logging.warning(f"Invalid profile: {profile_name}")
                 return
-
+            self.current_profile = profile_name
             profile = self.energy_profiles[profile_name]
-            max_monthly_bill = profile["max_monthly_bill"]
             usage_factors = profile["usage_factors"]
-
-            # Update threshold in GUI
-            self.gui.threshold_var.setValue(max_monthly_bill)
-
-            # Display usage limits in QTextEdit (single list without Limited/Unlimited)
             message = f"Profile: {profile_name}\n\n"
             usage_limits = []
             for device, factor in usage_factors.items():
@@ -209,106 +379,27 @@ class EnergyCostPredictorApp:
                     usage_limits.append(f"{device}: No reduction")
             message += "\n".join(usage_limits)
             self.gui.profile_info.setText(message)
-
-            # Calculate predicted bill without modifying the table
             if hasattr(self, 'original_appliances') and self.original_appliances:
-                # Work with a fresh copy of original appliances
-                adjusted_appliances = copy.deepcopy(self.original_appliances)
-                adjusted_indices = []
-                for idx, appliance in enumerate(adjusted_appliances):
-                    device_type = appliance["Device Type"]
-                    factor = usage_factors.get(device_type, usage_factors["default"])
-                    original_usage = appliance["Usage Duration (minutes)"]
-                    new_usage = original_usage * factor
-                    if new_usage != original_usage:
-                        adjusted_indices.append(idx)
-                    appliance["Usage Duration (minutes)"] = new_usage
-
-                # Calculate costs for adjusted appliances
-                scaled_features, valid_indices = preprocess_appliances(
-                    adjusted_appliances,
-                    self.model_loader.device_encoder,
-                    self.model_loader.room_encoder,
-                    self.model_loader.scaler
-                )
-                if scaled_features is not None:
-                    daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-                    # Update original bill display (table remains unchanged)
-                    total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(daily_costs)
-                    self.gui.update_monthly_bill(total_monthly_bill)
-
-            logging.debug(f"Profile changed to {profile_name} with max bill ${max_monthly_bill}")
+                self.calculate_monthly_bill_for_7_days()
         except Exception as e:
             logging.error(f"Error in change_profile: {str(e)}")
             QMessageBox.critical(self.gui, "Error", f"Failed to change profile: {str(e)}")
 
-    def handle_time_settings(self, time_str, heater_on, water_heater_on):
-        """
-        Handle changes to arrival time and appliance activation settings.
+    def update_bill_for_day(self, daily_data):
+        self.calculate_monthly_bill_for_7_days()
 
-        Args:
-            time_str (str): Arrival time in HH:mm format.
-            heater_on (bool): Whether to turn on the heater.
-            water_heater_on (bool): Whether to turn on the water heater.
-        """
+    def update_weather_display(self):
         try:
-            logging.debug(f"Received time settings: Arrival {time_str}, Heater {heater_on}, Water Heater {water_heater_on}")
-            # Placeholder for scheduling logic (e.g., turning on heater/water heater at specified time)
+            location, temperature, humidity = ("Hanoi", 25.0, 60.0)
+            if location is not None and temperature is not None and humidity is not None:
+                self.gui.update_weather(location, temperature, humidity, self.settings)
+            else:
+                self.gui.update_weather(None, None, None, self.settings)
         except Exception as e:
-            logging.error(f"Error in handle_time_settings: {str(e)}")
-            QMessageBox.critical(self.gui, "Error", f"Failed to update time settings: {str(e)}")
-
-    def set_threshold(self):
-        """
-        Handle setting the maximum monthly bill threshold by balancing appliance usage.
-        """
-        try:
-            max_monthly_bill = self.gui.get_threshold()
-            if not hasattr(self, 'appliances') or not self.appliances:
-                QMessageBox.warning(self.gui, "Warning", "No appliances loaded. Please load a dataset first.")
-                return
-
-            adjusted_appliances, adjustments = self.appliance_balancer.balance_appliances(
-                self.appliances,
-                self.daily_costs,
-                max_monthly_bill,
-                self.valid_indices
-            )
-
-            # Update appliances with adjusted values
-            self.adjusted_indices = [idx for idx in range(len(adjusted_appliances))
-                                    if adjusted_appliances[idx]["Usage Duration (minutes)"] !=
-                                       self.appliances[idx]["Usage Duration (minutes)"]]
-            self.data_manager.update_appliances(adjusted_appliances)
-            self.appliances = adjusted_appliances
-
-            # Recalculate daily costs with adjusted usage
-            scaled_features, valid_indices = preprocess_appliances(
-                self.appliances,
-                self.model_loader.device_encoder,
-                self.model_loader.room_encoder,
-                self.model_loader.scaler
-            )
-            if scaled_features is not None:
-                self.daily_costs = self.bill_calculator.calculate_daily_costs(scaled_features)
-                self.valid_indices = valid_indices
-                self.gui.populate_table(self.appliances, self.daily_costs, self.adjusted_indices)
-
-                # Update original monthly bill display
-                total_monthly_bill, _ = self.bill_calculator.calculate_monthly_bill(self.daily_costs)
-                self.gui.update_monthly_bill(total_monthly_bill)
-
-            # Show adjustments in a dialog
-            dialog = AdjustmentDialog(adjustments, self.appliances, self.gui)
-            dialog.exec_()
-        except Exception as e:
-            logging.error(f"Error in set_threshold: {str(e)}")
-            QMessageBox.critical(self.gui, "Error", f"Failed to set threshold: {str(e)}")
+            logging.error(f"Error updating weather display: {str(e)}")
+            self.gui.update_weather(None, None, None, self.settings)
 
     def run(self):
-        """
-        Run the application.
-        """
         sys.exit(self.app.exec_())
 
 if __name__ == "__main__":

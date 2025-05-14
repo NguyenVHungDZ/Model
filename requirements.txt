@@ -9,3 +9,4 @@ scikit-learn
 joblib
 PyQt5
 DataProcessor
+google-cloud-storage

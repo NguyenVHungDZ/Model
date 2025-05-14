@@ -35,6 +35,6 @@ class BillCalculator:
                 - adjustments (list): List of adjustments (empty for compatibility).
         """
         total_daily_cost = sum(daily_costs)  # Sum daily costs in cents
-        total_monthly_bill = total_daily_cost * 30  # Multiply by 30 days
+        total_monthly_bill = total_daily_cost  # Multiply by 30 days
         adjustments = []  # No adjustments needed for this calculation
         return total_monthly_bill, adjustments
